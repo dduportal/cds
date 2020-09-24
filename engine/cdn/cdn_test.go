@@ -5,12 +5,13 @@ import (
 	"context"
 	"crypto/rsa"
 	"encoding/json"
-	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/require"
-	"gopkg.in/spacemonkeygo/httpsig.v0"
 	"net/http"
 	"sync"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/spacemonkeygo/httpsig.v0"
 
 	"github.com/ovh/cds/engine/api"
 	"github.com/ovh/cds/engine/cdn/item"
@@ -58,7 +59,7 @@ func newTestService(t *testing.T) (*Service, *test.FakeTransaction) {
 		fakeAPIPrivateKey.key, _ = jws.NewRandomRSAKey()
 	}
 	s.ParsedAPIPublicKey = &fakeAPIPrivateKey.key.PublicKey
-	s.initRouter(context.TODO())
+	require.NoError(t, s.initRouter(context.TODO()))
 
 	t.Cleanup(func() { cancel() })
 	return s, db

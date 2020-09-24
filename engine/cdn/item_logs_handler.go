@@ -13,6 +13,7 @@ import (
 	"github.com/ovh/cds/engine/authentication"
 	"github.com/ovh/cds/engine/cdn/item"
 	"github.com/ovh/cds/engine/service"
+	"github.com/ovh/cds/engine/websocket"
 	"github.com/ovh/cds/sdk"
 )
 
@@ -64,6 +65,33 @@ func (s *Service) getItemLogsHandler() service.Handler {
 		}
 
 		return service.WriteJSON(w, it, http.StatusOK)
+	}
+}
+
+func (s *Service) getItemLogsStreamHandler() service.Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		vars := mux.Vars(r)
+		itemType := sdk.CDNItemType(vars["type"])
+		if err := itemType.IsLog(); err != nil {
+			return err
+		}
+		token, err := s.checkItemLogsAuth(r)
+		if err != nil {
+			return err
+		}
+
+		c, err := websocket.Upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return sdk.WithStack(err)
+		}
+		defer c.Close()
+
+		wsClient := websocket.NewClient(sdk.UUID(), c)
+		wsClientData := &websocketClientData{token: token}
+		s.WSServer.AddClient(wsClient, wsClientData)
+		defer s.WSServer.RemoveClient(wsClient.UUID())
+
+		return wsClient.Listen(ctx, s.GoRoutines)
 	}
 }
 

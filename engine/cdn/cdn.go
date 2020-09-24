@@ -174,7 +174,9 @@ func (s *Service) Serve(c context.Context) error {
 	s.RunTcpLogServer(ctx)
 
 	log.Info(ctx, "Initializing HTTP router")
-	s.initRouter(ctx)
+	if err := s.initRouter(ctx); err != nil {
+		return err
+	}
 	server := &http.Server{
 		Addr:           fmt.Sprintf("%s:%d", s.Cfg.HTTP.Addr, s.Cfg.HTTP.Port),
 		Handler:        s.Router.Mux,
